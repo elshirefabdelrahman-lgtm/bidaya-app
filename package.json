@@ -1,0 +1,30 @@
+{
+  "name": "bidaya-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/serve.js",
+    "test": "node --max-old-space-size=192 --liftoff-only --wasm-num-compilation-tasks=1 --wasm-lazy-compilation --test --test-concurrency=1 tests/*.test.js",
+    "check": "node scripts/check.js",
+    "test:ui": "node tests/e2e/smoke.mjs",
+    "test:case-payments": "node tests/e2e/case-payments.mjs",
+    "test:supabase-ui": "node tests/e2e/supabase-flow.mjs",
+    "build": "node scripts/build.js"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.0",
+    "@electric-sql/pglite": "^0.5.14",
+    "@napi-rs/keyring": "^2.1.2",
+    "@playwright/test": "^1.64.1",
+    "esbuild": "^0.28.2"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/keyboard": "^8.0.6",
+    "@capacitor/share": "^8.0.3",
+    "fflate": "^0.8.3"
+  }
+}

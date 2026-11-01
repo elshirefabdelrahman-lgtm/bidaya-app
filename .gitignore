@@ -1,0 +1,15 @@
+node_modules/
+artifacts/
+.env
+.env.*
+!.env.example
+supabase/.temp/
+.DS_Store
+dist/
+*.log
+hs_err_pid*
+*.hprof
+*.jks
+*.keystore
+android/.gradle/
+android/local.properties

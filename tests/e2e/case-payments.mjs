@@ -1,0 +1,44 @@
+import {mockBackend,loginMock} from './mock-backend.mjs';
+import { chromium, expect } from '@playwright/test';
+import { mkdir } from 'node:fs/promises';
+const browser=await chromium.launch({channel:'msedge',headless:true});
+try {
+ const page=await browser.newPage({viewport:{width:1365,height:900}}),errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ await page.route('https://**/*',route=>route.abort());
+ await page.goto('http://localhost:4174/');await mockBackend(page);await loginMock(page);
+ const navigate=async key=>page.locator(`[data-screen="${key}"]`).first().click();
+ await navigate('cases');await page.locator('[data-open="case"]').click();
+ await page.locator('[name="name"]').fill('حالة اختبار الربط');await page.locator('[name="fee"]').fill('30000');await page.locator('.dialog [type="submit"]').click();
+ await expect(page.locator('#dialog-title')).toHaveText('تفاصيل الحالة 001');
+ const value=key=>page.locator(`[data-case-value="${key}"]`);
+ await expect(value('paid')).toHaveText('٠ ج.م');await expect(value('remaining')).toHaveText('٣٠٬٠٠٠ ج.م');await expect(value('status')).toHaveText('لم يدفع');
+ const pay=async amount=>{
+  await page.getByRole('button',{name:'تسجيل دفعة',exact:true}).click();
+  await expect(page.locator('.dialog input:not([type="hidden"]),.dialog select')).toHaveCount(4);
+  await expect(page.locator('.dialog [name="caseId"]')).toHaveValue('001');
+  await page.locator('[name="amount"]').fill(String(amount));await page.locator('.dialog [type="submit"]').click();
+  await expect(page.locator('#dialog-title')).toHaveText('تفاصيل الحالة 001');
+ };
+ await pay(10000);await expect(value('paid')).toHaveText('١٠٬٠٠٠ ج.م');await expect(value('remaining')).toHaveText('٢٠٬٠٠٠ ج.م');
+ await pay(5000);await expect(value('paid')).toHaveText('١٥٬٠٠٠ ج.م');await expect(value('remaining')).toHaveText('١٥٬٠٠٠ ج.م');await expect(value('status')).toHaveText('دفع جزءًا');
+ await expect(page.locator('.dialog tbody tr')).toHaveCount(2);await expect(page.locator('.dialog tbody')).toContainText('اختبار محلي');await expect(page.locator('.dialog tbody')).not.toContainText('غير مسجل');
+ await mkdir('artifacts/case-payments',{recursive:true});await page.screenshot({path:'artifacts/case-payments/case-detail.png',fullPage:true});
+ await page.locator('.dialog [data-close]').first().click();await navigate('collections');
+ await expect(page.locator('tbody tr')).toHaveCount(2);for(const row of await page.locator('tbody tr').all())await expect(row).toContainText('حالة اختبار الربط');
+ await expect(page.locator('.section-card__head strong')).toHaveText('١٥٬٠٠٠ ج.م');
+ await navigate('dashboard');await expect(page.locator('.metric').filter({hasText:'تحصيلات الفترة'}).locator('strong')).toHaveText('١٥٬٠٠٠ ج.م');await expect(page.locator('.metric').filter({hasText:'أرصدة مستحقة'}).locator('strong')).toHaveText('١٥٬٠٠٠ ج.م');
+ await navigate('reports');await expect(page.locator('.metric').filter({hasText:'تحصيلات فعلية'}).locator('strong')).toHaveText('١٥٬٠٠٠ ج.م');await expect(page.locator('.metric').filter({hasText:'الرصيد المستحق الحالي'}).locator('strong')).toHaveText('١٥٬٠٠٠ ج.م');
+ await navigate('cases');await page.locator('[data-filter="cases.q"]').fill('اختبار الربط');await expect(page.locator('tbody tr')).toHaveCount(1);await page.locator('[data-case-detail="001"]').click();
+ page.on('dialog',dialog=>dialog.accept(dialog.type()==='prompt'?'تصحيح دفعة اختبار':undefined));
+ await page.locator('.dialog tbody tr').filter({hasText:'٥٬٠٠٠'}).locator('[data-void]').click();
+ await expect(value('paid')).toHaveText('١٠٬٠٠٠ ج.م');await expect(value('remaining')).toHaveText('٢٠٬٠٠٠ ج.م');await expect(page.locator('.dialog tbody tr')).toHaveCount(2);await expect(page.locator('.dialog tbody')).toContainText('تصحيح دفعة اختبار');
+ await pay(4000);await expect(value('paid')).toHaveText('١٤٬٠٠٠ ج.م');await expect(value('remaining')).toHaveText('١٦٬٠٠٠ ج.م');
+ await page.locator('.dialog [data-close]').first().click();await navigate('collections');await expect(page.locator('tbody tr')).toHaveCount(3);await expect(page.locator('.section-card__head strong')).toHaveText('١٤٬٠٠٠ ج.م');
+ await navigate('dashboard');await expect(page.locator('.metric').filter({hasText:'تحصيلات الفترة'}).locator('strong')).toHaveText('١٤٬٠٠٠ ج.م');
+ await navigate('reports');await expect(page.locator('.metric').filter({hasText:'تحصيلات فعلية'}).locator('strong')).toHaveText('١٤٬٠٠٠ ج.م');
+ await navigate('audit');await expect(page.locator('tbody')).toContainText('void');await expect(page.locator('tbody')).toContainText('تصحيح دفعة اختبار');
+ await page.setViewportSize({width:390,height:844});await page.locator('.mobile-nav [data-screen="cases"]').click();await page.locator('[data-case-detail="001"]').click();await page.getByRole('button',{name:'تسجيل دفعة',exact:true}).click();await expect(page.locator('[name="amount"]')).toBeVisible();await page.screenshot({path:'artifacts/case-payments/payment-mobile.png'});
+ expect(errors).toEqual([]);
+ console.log('PASS requested scenario: 30000 -> payment 10000 -> remaining 20000 -> payment 5000 -> paid/remaining 15000; two collection rows; Dashboard/reports 15000; recorded actor/time; cancellation and replacement synchronize balances and reports; mobile payment form; no JavaScript errors.');
+} finally {await browser.close();}

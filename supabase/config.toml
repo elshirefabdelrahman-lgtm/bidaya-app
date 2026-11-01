@@ -1,0 +1,5 @@
+[functions.login]
+verify_jwt = false
+[functions.admin-users]
+verify_jwt = false
+# admin-users independently validates the caller with auth.getUser(jwt) and database role.
