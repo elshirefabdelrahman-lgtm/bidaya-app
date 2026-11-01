@@ -38,7 +38,7 @@ npx cap sync android
 المعرّف com.bidaya.center. يتطلب Java 21 وAndroid SDK 36 وBuild Tools 36.0.0. اضبط JAVA_HOME وANDROID_HOME وGRADLE_USER_HOME إلى المسارات المناسبة، ثم أنشئ android/local.properties الذي يحتوي sdk.dir بمسار SDK. هذا الملف غير مرفوع إلى Git.
 
 ```powershell
-.\android\gradlew.bat -p android assembleRelease --no-daemon --max-workers=1
+.\android\gradlew.bat -p android :app:assembleRelease --no-daemon --max-workers=1
 node scripts/sign-android.mjs
 ```
 
