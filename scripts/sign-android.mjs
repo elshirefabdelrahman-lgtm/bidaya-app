@@ -1,6 +1,6 @@
 import {AsyncEntry} from '@napi-rs/keyring';
 import {randomBytes,createHash} from 'node:crypto';
-import {mkdir,stat,readFile} from 'node:fs/promises';
+import {mkdir,stat,readFile,writeFile} from 'node:fs/promises';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import path from 'node:path';
@@ -23,11 +23,16 @@ if(!exists)await run(path.join(java,'bin/keytool.exe'),[
 ],{env});
 if(process.argv.includes('--prepare')){console.log('Encrypted signing key ready. Password is in the OS credential store.');process.exit(0);}
 await mkdir('artifacts',{recursive:true});
-const output='artifacts/Bidaya-1.0.0.apk';
+const metadata=JSON.parse(await readFile('android/app/build/outputs/apk/release/output-metadata.json','utf8'));
+const version=metadata.elements?.[0]?.versionName;
+if(typeof version!=='string'||!/^\d+\.\d+(?:\.\d+)?$/.test(version))throw Error('Unexpected Android release version.');
+const output=`artifacts/Bidaya-${version}.apk`;
 const signer=path.join(sdk,'build-tools/36.0.0/lib/apksigner.jar');
 await run(path.join(java,'bin/java.exe'),['-jar',signer,'sign','--ks',key,'--ks-key-alias','bidaya',
  '--ks-pass','env:BIDAYA_SIGNING_PASSWORD','--key-pass','env:BIDAYA_SIGNING_PASSWORD','--out',output,
  'android/app/build/outputs/apk/release/app-release-unsigned.apk'],{env});
 await run(path.join(java,'bin/java.exe'),['-jar',signer,'verify','--verbose',output],{env});
 console.log('Signed APK verified:',output);
-console.log('SHA256:',createHash('sha256').update(await readFile(output)).digest('hex'));
+const digest=createHash('sha256').update(await readFile(output)).digest('hex');
+await writeFile(output+'.sha256',digest+'  '+path.basename(output)+'\n');
+console.log('SHA256:',digest);

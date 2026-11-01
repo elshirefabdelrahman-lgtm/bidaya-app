@@ -1,4 +1,5 @@
 import { caseDetail, paymentForm, paymentActions } from './case-ui.js';
+import { confirmAppReady } from './ota.js';
 import { SupabaseRepository, SessionError, connected } from './repository.js';
 import { emptyData, can, roles } from './service.js';
 import { extraScreen, extraForm, reportDetail, comparisonChart, filterBar, matchFilters, exportReport } from './screens.js';
@@ -193,5 +194,6 @@ root.addEventListener('submit', async event => {
 const recoveryParams=new URLSearchParams(location.hash.slice(1));
 if(recoveryParams.get('type')==='recovery'&&connected()&&recoveryParams.has('access_token')){repository=liveRepository();try{repository.setSession({access_token:recoveryParams.get('access_token'),refresh_token:recoveryParams.get('refresh_token'),expires_in:Number(recoveryParams.get('expires_in')||3600)});state.recovery=true;}catch(e){repository.clearSession();toast(e.message,true);}history.replaceState(null,'',location.pathname+location.search);}
 render();
+void confirmAppReady();
 
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&(state.modal||state.detail))closeModal();if(event.key==='Tab'&&(state.modal||state.detail)){const els=[...root.querySelectorAll('.dialog button,.dialog input,.dialog select,.dialog textarea')].filter(x=>!x.disabled);if(!els.length)return;const first=els[0],last=els.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}});

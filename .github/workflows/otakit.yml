@@ -1,0 +1,41 @@
+name: Bidaya OTA
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'styles/**'
+      - 'brand/**'
+      - 'hero/**'
+      - 'index.html'
+      - 'scripts/build.js'
+      - 'package*.json'
+      - 'capacitor.config.json'
+      - '.github/workflows/otakit.yml'
+permissions:
+  contents: read
+concurrency:
+  group: bidaya-ota-production
+  cancel-in-progress: false
+jobs:
+  release:
+    # Enable after the first OTA-capable APK has passed device acceptance.
+    if: vars.OTAKIT_AUTOPUBLISH == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+      - name: Publish compatible web update
+        env:
+          OTAKIT_TOKEN: ${{ secrets.OTAKIT_TOKEN }}
+        run: |
+          test -n "$OTAKIT_TOKEN" || { echo 'Configure the OtaKit repository secret first.'; exit 1; }
+          npx --yes @otakit/cli@1.11.0 upload dist --version "web-${GITHUB_SHA}-${GITHUB_RUN_ATTEMPT}" --release --fail-on-incompatible --strict-artifacts
