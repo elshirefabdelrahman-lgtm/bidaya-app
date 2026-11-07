@@ -12,6 +12,32 @@ export function caseFinancials(data, record) {
 export const timestampLabel = value => value ? new Intl.DateTimeFormat('ar-EG', { dateStyle:'medium', timeStyle:'short', timeZone:'Africa/Cairo' }).format(new Date(value)) : 'غير مسجل';
 export const monthStart = date => `${date.slice(0, 7)}-01`;
 
+// A read-only projection of the shared ledger, not extra expense records.
+// Salary deductions are non-cash settlements and must never appear here.
+export function expenseMovements(data) {
+  const employee = row => data.employees.find(e=>e.id===row.employeeId);
+  const linked = (row, returned=false) => {
+    const e=employee(row);
+    return {...row, source:returned?'advanceReturn':'advance',
+      branch:row.branch||e?.branch||'', category:returned?'رد سلفة نقدًا':'سلفة موظف',
+      description:`${returned?'رد سلفة':'صرف سلفة'} — ${e?.name||'موظف غير متاح'}${row.note?' — '+row.note:''}`,
+      incoming:returned?Number(row.amount):0, outgoing:returned?0:Number(row.amount)};
+  };
+  return [
+    ...data.expenses.map(row=>({...row,source:'expense',incoming:0,outgoing:Number(row.amount)})),
+    ...(data.advances||[]).map(row=>linked(row)),
+    ...(data.settlements||[]).filter(row=>row.kind==='cash').map(row=>linked(row,true)),
+  ];
+}
+export function expenseMovementTotals(rows) {
+  const active=rows.filter(row=>!row.voided);
+  return {
+    operating:total(active.filter(row=>row.source==='expense'),'outgoing'),
+    advances:total(active.filter(row=>row.source==='advance'),'outgoing'),
+    returned:total(active,'incoming'), outgoing:total(active,'outgoing'),
+  };
+}
+
 export function summary(data, { from = '', to = '', branch = '' } = {}) {
   const cases = data.cases.filter(row => !branch || row.branch === branch);
   const caseIds = new Set(cases.map(row => row.id));

@@ -21,6 +21,7 @@ export async function mockBackend(page) {
   }
   return send({},404);
  });
+ return {snapshot:()=>structuredClone(data)};
 }
 export async function loginMock(page){
  if(await page.locator('[data-demo]').count())throw Error('Production must not expose demo login.');
