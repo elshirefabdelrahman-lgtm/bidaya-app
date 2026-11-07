@@ -9,7 +9,8 @@
     "test:ui": "node tests/e2e/smoke.mjs",
     "test:case-payments": "node tests/e2e/case-payments.mjs",
     "test:supabase-ui": "node tests/e2e/supabase-flow.mjs",
-    "build": "node scripts/build.js"
+    "build": "node scripts/build.js",
+    "test:web-build": "npm run build && node tests/e2e/web-build.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.6.0",
@@ -28,5 +29,8 @@
     "@otakit/capacitor-updater": "^3.3.0",
     "fflate": "^0.8.3"
   },
-  "version": "1.1.0"
+  "version": "1.1.0",
+  "engines": {
+    "node": "24.x"
+  }
 }

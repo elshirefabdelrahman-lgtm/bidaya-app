@@ -1,14 +1,14 @@
 import {emptyData,execute} from '../../src/service.js';
 
 // Test transport only. Production has no demo login or local data fallback.
-export async function mockBackend(page) {
+export async function mockBackend(page,{origin='http://localhost:4174'}={}) {
  let data=emptyData();
  const actor={id:'test-admin',name:'اختبار محلي',role:'Super Admin',active:true,permissions:[],branches:[]};
  const reset=()=>{data=emptyData();data.branches=['فرع اختبار محلي'];data.users=[actor];};reset();
  await page.unroute('https://**/*');
  await page.route('https://**/*',async route=>{
   const r=route.request(),p=new URL(r.url()).pathname;
-  const headers={'Access-Control-Allow-Origin':'http://localhost:4174','Access-Control-Allow-Headers':'apikey,content-type,authorization','Access-Control-Allow-Methods':'POST,OPTIONS'};
+  const headers={'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'apikey,content-type,authorization','Access-Control-Allow-Methods':'POST,OPTIONS'};
   const send=(v,status=200)=>route.fulfill({status,headers,contentType:'application/json',body:JSON.stringify(v)});
   if(r.method()==='OPTIONS')return send({});
   const body=r.postDataJSON();

@@ -1,0 +1,16 @@
+.git/
+node_modules/
+artifacts/
+output/
+android/
+supabase/
+tests/
+docs/
+.env
+.env.*
+*.apk
+*.p12
+*.jks
+*.keystore
+*.log
+*.pdf

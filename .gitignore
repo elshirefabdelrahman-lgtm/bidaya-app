@@ -5,6 +5,7 @@ artifacts/
 !.env.example
 supabase/.temp/
 .DS_Store
+.vercel/
 dist/
 *.log
 hs_err_pid*
