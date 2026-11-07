@@ -14,7 +14,7 @@ test('advance, cash return and salary deduction remain single-source cash moveme
  cmd('advance',{employeeId,amount:1000,date:'2026-11-07'});
  assert.equal(d.expenses.length,1);
  assert.deepEqual(expenseMovementTotals(expenseMovements(d)),{operating:300,advances:1000,returned:0,outgoing:1300});
- assert.equal(summary(d).treasury,-1300);
+ assert.equal(summary(d).treasury,-1300);assert.equal(summary(d).expenseOutflowTotal,1300);
  cmd('repayment',{employeeId,amount:200,date:'2026-11-07'});
  cmd('salary',{employeeId,month:'2026-11',additions:0,deduction:0,advance:800,paid:5200,date:'2026-11-07'});
  const original=structuredClone(d),rows=expenseMovements(d);
@@ -22,7 +22,7 @@ test('advance, cash return and salary deduction remain single-source cash moveme
  assert.equal(rows.find(x=>x.source==='advance').id,d.advances[0].id);
  assert.match(rows.find(x=>x.source==='advance').description,/موظف اختبار/);
  assert.deepEqual(expenseMovementTotals(rows),{operating:300,advances:1000,returned:200,outgoing:1300});
- assert.equal(summary(d).advanceOutstanding,0);assert.equal(summary(d).treasury,-6300);
+ assert.equal(summary(d).expenseOutflowTotal,1300);assert.equal(summary(d).advanceOutstanding,0);assert.equal(summary(d).treasury,-6300);
  const movements=ledger({data:d,report:{}});
  assert.equal(movements.reduce((s,x)=>s+x.outgoing,0),6500);
  assert.equal(movements.reduce((s,x)=>s+x.incoming,0),200);

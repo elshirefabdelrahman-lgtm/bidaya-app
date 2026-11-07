@@ -1,9 +1,9 @@
 import {emptyData,execute} from '../../src/service.js';
 
 // Test transport only. Production has no demo login or local data fallback.
-export async function mockBackend(page,{origin='http://localhost:4174'}={}) {
+export async function mockBackend(page,{origin='http://localhost:4174',user}={}) {
  let data=emptyData();
- const actor={id:'test-admin',name:'اختبار محلي',role:'Super Admin',active:true,permissions:[],branches:[]};
+ const actor=user||{id:'test-admin',name:'اختبار محلي',role:'Super Admin',active:true,permissions:[],branches:[]};
  const reset=()=>{data=emptyData();data.branches=['فرع اختبار محلي'];data.users=[actor];};reset();
  await page.unroute('https://**/*');
  await page.route('https://**/*',async route=>{

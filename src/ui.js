@@ -23,7 +23,7 @@ export const icon = (name, size = 20) => {
 
 export const navItems = [
   ['dashboard', 'الرئيسية'], ['cases', 'الحالات'], ['collections', 'التحصيلات'],
-  ['expenses', 'المصروفات'], ['employees', 'الموظفون'], ['payroll','الرواتب'], ['advances','السلف'], ['reports', 'التقارير'],
+  ['expenses', 'المصروفات والسلف'], ['employees', 'الموظفون'], ['payroll','الرواتب'], ['reports', 'التقارير'],
   ['audit','سجل النشاط'], ['settings', 'الإعدادات'], ['users', 'المستخدمون'],
 ];
 
