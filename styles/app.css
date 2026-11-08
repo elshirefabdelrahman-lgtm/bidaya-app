@@ -12,3 +12,5 @@
 .shell.menu-open>.overlay{z-index:70}.table-scroll td small{max-width:230px;overflow-wrap:anywhere;white-space:normal}.dialog__body .field input{max-width:100%}
 
 #advance-balances table{min-width:0}
+
+@media print{.toast{display:none!important}}

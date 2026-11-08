@@ -1,5 +1,6 @@
+import {unzipSync,strFromU8} from 'fflate';
 import {chromium,expect} from '@playwright/test';
-import {mkdir} from 'node:fs/promises';
+import {mkdir,readFile} from 'node:fs/promises';
 import {mockBackend,loginMock} from './mock-backend.mjs';
 const browser=await chromium.launch({channel:'msedge',headless:true});
 try{
@@ -20,13 +21,17 @@ try{
  await expect(page.locator('#advance-balances')).toBeInViewport();
  await page.locator('[data-open="repayment"]').click();await page.locator('[name="amount"]').fill('200');await save();
  await nav('payroll');await page.locator('[data-open="salary"]').click();await page.locator('[name="advance"]').fill('800');await page.locator('[name="paid"]').fill('5200');await save();
- await nav('expenses');await expect(page.locator('[data-expense-ledger] tbody tr')).toHaveCount(2);
+ await nav('expenses');await page.locator('[data-open="expense"]').click();await page.locator('[name="amount"]').fill('300');await page.locator('.dialog [name="category"]').selectOption('الإيجار');await page.locator('.dialog [name="description"]').fill('إيجار اختبار محلي');await save();
+ await expect(page.locator('[data-expense-ledger] tbody tr')).toHaveCount(3);await expect(page.locator('[data-total-spent-value]')).toHaveText('٦٬٥٠٠ ج.م');
  await expect(page.locator('[data-movement-source="advanceReturn"]')).toContainText('٢٠٠ ج.م');
  await page.locator('select[name="category"]').selectOption('سلفة موظف');await page.locator('[data-form="filters"] [type=submit]').click();
  await expect(page.locator('[data-expense-ledger] tbody tr')).toHaveCount(1);
  await page.locator('[data-refresh]').click();await expect(page.locator('[data-movement-source="advance"]')).toHaveCount(1);
- const data=backend.snapshot();expect(data.expenses).toHaveLength(0);expect(data.advances).toHaveLength(1);expect(data.settlements).toHaveLength(2);
- await nav('reports');await expect(page.locator('#main')).toContainText('٦٬٠٠٠');
+ const data=backend.snapshot();expect(data.expenses).toHaveLength(1);expect(data.advances).toHaveLength(1);expect(data.settlements).toHaveLength(2);
+ await nav('dashboard');await expect(page.locator('[data-total-spent-value]')).toHaveText('٦٬٥٠٠ ج.م');
+ await nav('reports');await expect(page.locator('[data-total-spent-value]')).toHaveText('٦٬٥٠٠ ج.م');
+ const download=page.waitForEvent('download');await page.locator('[data-export="xlsx"]').click();const exported=await download;const entries=unzipSync(await readFile(await exported.path()));const sheet=strFromU8(entries['xl/worksheets/sheet1.xml']);expect(sheet).toContain('إجمالي المنصرف');expect(sheet).toContain('<v>6500</v>');
+ await mkdir('artifacts/total-spent',{recursive:true});await page.emulateMedia({media:'print'});await expect(page.locator('[data-total-spent-value]')).toBeVisible();await page.pdf({path:'artifacts/total-spent/report.pdf',format:'A4',landscape:true,printBackground:true});await page.emulateMedia({media:'screen'});
  await nav('expenses');await page.setViewportSize({width:390,height:844});
  await expect(page.locator('[data-expense-summary]')).toBeVisible();await page.waitForTimeout(350);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
  await mkdir('artifacts/advance-expenses',{recursive:true});await page.screenshot({path:'artifacts/advance-expenses/mobile.png',fullPage:true,animations:'disabled'});

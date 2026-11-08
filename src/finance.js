@@ -50,13 +50,14 @@ export function summary(data, { from = '', to = '', branch = '' } = {}) {
   const expenseTotal = total(expenses);
   const salariesPaid = total(payroll, data.salaryPayments ? 'amount' : 'paid');
   const outstanding = total(cases.map(row => ({ amount: caseBalance(data, row) })));
-  const advances = (data.advances || []).filter(x=>employeeIds.has(x.employeeId));
-  const settlements = (data.settlements || []).filter(x=>employeeIds.has(x.employeeId));
+  const advances = (data.advances || []).filter(x=>!x.voided&&employeeIds.has(x.employeeId));
+  const settlements = (data.settlements || []).filter(x=>!x.voided&&employeeIds.has(x.employeeId));
   const advanceIssued=total(advances.filter(x=>inRange(x.date,from,to)));
   const advanceReturned=total(settlements.filter(x=>x.kind==='cash'&&inRange(x.date,from,to)));
+  const totalSpent=total([{amount:expenseTotal},{amount:salariesPaid},{amount:advanceIssued}]);
   const advanceOutstanding=total(advances)-total(settlements);
   const salaryLiability=total(data.payroll.filter(x=>employeeIds.has(x.employeeId)).map(x=>({amount:x.base===undefined?0:x.base+x.additions-x.deduction-x.advance-total((data.salaryPayments||[]).filter(p=>p.salaryId===x.id))})));
-  return { billed, collected, expenseTotal, salariesPaid, outstanding, advanceIssued,advanceReturned,advanceOutstanding,salaryLiability,expenseOutflowTotal:Math.round((expenseTotal+advanceIssued)*100)/100,cashFlow: collected - expenseTotal - salariesPaid, treasury:collected-expenseTotal-salariesPaid-advanceIssued+advanceReturned, cases: cases.length, active:cases.filter(x=>x.status==='نشطة').length,closed:cases.filter(x=>x.status!=='نشطة').length,collections: collections.length };
+  return { billed, collected, expenseTotal, salariesPaid, outstanding, advanceIssued,advanceReturned,advanceOutstanding,salaryLiability,totalSpent,expenseOutflowTotal:Math.round((expenseTotal+advanceIssued)*100)/100,cashFlow: collected - expenseTotal - salariesPaid, treasury:total([{amount:collected},{amount:-totalSpent},{amount:advanceReturned}]), cases: cases.length, active:cases.filter(x=>x.status==='نشطة').length,closed:cases.filter(x=>x.status!=='نشطة').length,collections: collections.length };
 }
 
 export function validateCollection(data, entry) {
